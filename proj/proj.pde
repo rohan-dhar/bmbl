@@ -13,7 +13,7 @@ Player p = new Player(80, color(255, 138, 133));
 BlockManager blocks = new BlockManager(blockSize, screenWidth);
 
 int speed = 6;
-float blockProbability = 0.02;
+float blockProbability = 0.032;
 
 void setup(){
   size(1200, 900);
