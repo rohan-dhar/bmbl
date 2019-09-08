@@ -42,11 +42,10 @@ class Floor{
     }
   }
 
-  public void render(){
-    background(0);
-    if(Math.abs(this.bg.x) > this.screenDelta){
+  public void render(){    
+    if(-this.bg.x > this.screenDelta){
       this.bg.render();
-      int wid = Math.abs(this.bg.x) - this.screenDelta;
+      int wid = (-this.bg.x) - this.screenDelta;
       this.bgCopy.x = this.screenWidth - wid;
       this.bgCopy.render();
     }else{
@@ -56,22 +55,36 @@ class Floor{
 }  
 
 class Player{
-  int x, y, size;
-  color bgColor;
-  public Player(int size, color bgColor){
-    this.x = 100;
-    this.y = 100;
-    this.size = 100;
-    this.bgColor = bgColor;
+  int x, y, size, maxX, screenWidth;
+  ArrayList <Integer> colors = new ArrayList();
+  public Player(int size, color bgColor, int maxX, int screenWidth){
+    this.x = screenWidth/2;
+    this.y = screenHeight/2;
+    
+    this.size = size;
+    this.colors.add(bgColor);
+    
+    this.maxX = maxX;
+    this.screenWidth = screenWidth;
   }
   
-  public void render(){
-    noStroke();
-    fill(255,255,255, 80);
-    ellipse(this.x, this.y, this.size+150, this.size+150);
-    fill(this.bgColor);  
-    ellipse(this.x, this.y, this.size, this.size);
-
+  public void move(int x, int y){
+    if(x >= this.screenWidth/2 - maxX && x <= screenWidth/2 + maxX){
+      this.x = x;
+    }else if(x < this.screenWidth/2 - maxX){
+      this.x = this.screenWidth/2 - maxX;
+    }else{
+      this.x = this.screenWidth/2 + maxX;
+    }
+    this.y = y;
+  }
+  
+  public void render(){    
+    int r = this.size / this.colors.size();
+    for(int i = this.colors.size(); i > 0; i--){
+      fill(this.colors.get(i-1));
+      ellipse(this.x, this.y, r*i, r*i);  
+    }
   }
 }
 
@@ -87,7 +100,6 @@ class Block{
   }
 
   public void render(){
-    noStroke();
     fill(this.c);
     ellipse(this.x, this.y, this.size, this.size);    
   }
@@ -119,7 +131,19 @@ class BlockManager{
         this.blocks.set(i, b); 
       }
     }
-   
+  }
+
+  public color detectCollision(int x, int y, int playerSize){
+    for(int i = 0; i < this.blocks.size(); i++){
+      Block b = blocks.get(i);
+      float dist = (b.x - x)*(b.x - x) + (b.y - y)*(b.y - y);
+      dist = (float)Math.sqrt(dist);
+      if(dist <= (playerSize/2 + b.size/2)){
+        this.blocks.remove(i);
+        return b.c;
+      }
+    }
+    return color(0, 0, 0);
   }
 
   public void render(){
