@@ -55,9 +55,10 @@ class Floor{
 }  
 
 class Player{
-  int x, y, size, maxX, screenWidth;
+  int x, y, size, maxX, screenWidth, undoLeft;
   ArrayList <Integer> colors = new ArrayList();
   public Player(int size, color bgColor, int maxX, int screenWidth){
+    this.undoLeft = 5;
     this.x = screenWidth/2;
     this.y = screenHeight/2;
     
@@ -79,12 +80,30 @@ class Player{
     this.y = y;
   }
   
+  public boolean undo(){
+    if(this.undoLeft > 0){
+      if(this.colors.size() == 1){
+        return true;
+      }
+      this.colors.remove(this.colors.size()-1);
+      this.undoLeft--;
+      return true;
+    }
+    return false;
+  } 
+  
   public void render(){    
     int r = this.size / this.colors.size();
     for(int i = this.colors.size(); i > 0; i--){
       fill(this.colors.get(i-1));
       ellipse(this.x, this.y, r*i, r*i);  
     }
+    fill(255,255,255,150);
+    textSize(20);
+    text("UNDO LEFT", 50, 70);
+    fill(255,255,255);
+    textSize(34);
+    text(((this.undoLeft != 0)?Integer.toString(this.undoLeft):"NONE :("), 50, 115);
   }
 }
 
@@ -151,5 +170,4 @@ class BlockManager{
       this.blocks.get(i).render();
     }
   }
-
 }
