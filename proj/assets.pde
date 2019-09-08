@@ -33,6 +33,10 @@ class Floor{
     this.screenWidth = screenWidth;
     this.screenDelta = this.bg.w - screenWidth;
   }
+  
+  public void init(){
+    this.bg.x = 0;
+  }
     
   public void next(int speed){
     if(Math.abs(this.bg.x) >= this.bg.w){
@@ -55,19 +59,30 @@ class Floor{
 }  
 
 class Player{
-  int x, y, size, maxX, screenWidth, undoLeft;
+  int x, y, size, maxX, screenWidth, screenHeight, undoLeft;
+  
   ArrayList <Integer> colors = new ArrayList();
-  public Player(int size, color bgColor, int maxX, int screenWidth){
-    this.undoLeft = 5;
-    this.x = screenWidth/2;
-    this.y = screenHeight/2;
-    
+  ArrayList <Integer> colorsToMatch = new ArrayList();
+  
+  public Player(int size, int maxX, int screenWidth, int screenHeight){
     this.size = size;
-    this.colors.add(bgColor);
-    
     this.maxX = maxX;
     this.screenWidth = screenWidth;
+    this.screenHeight = screenHeight;
   }
+  
+  public void init(color bgColor, color colorsToMatch[], int colorsNum){    
+    this.x = this.screenWidth/2;
+    this.y = 0;
+    this.undoLeft = 5;
+    this.colors.clear();
+    this.colorsToMatch.clear();
+    this.colors.add(bgColor);
+    for(int i = 0; i < colorsNum; i++){
+      this.colorsToMatch.add(colorsToMatch[i]);
+    }
+  }
+
   
   public void move(int x, int y){
     if(x >= this.screenWidth/2 - maxX && x <= screenWidth/2 + maxX){
@@ -94,16 +109,44 @@ class Player{
   
   public void render(){    
     int r = this.size / this.colors.size();
+    stroke(0,0,0,30);
     for(int i = this.colors.size(); i > 0; i--){
       fill(this.colors.get(i-1));
       ellipse(this.x, this.y, r*i, r*i);  
     }
+    
+    r = this.size / this.colorsToMatch.size();
+    stroke(0,0,0,20);
+    for(int i = this.colorsToMatch.size(); i > 0; i--){
+      fill(this.colorsToMatch.get(i-1));
+      ellipse(this.size/2 + 50, this.screenHeight - this.size/2 - 50, r*i, r*i);  
+    }
+    
+    noStroke();
     fill(255,255,255,150);
     textSize(20);
     text("UNDO LEFT", 50, 70);
     fill(255,255,255);
     textSize(34);
     text(((this.undoLeft != 0)?Integer.toString(this.undoLeft):"NONE :("), 50, 115);
+  }
+  
+  public int hasWon(){
+    if(this.colors.equals(this.colorsToMatch)){
+      return 1;
+    }else{
+      int incorrect = 0;
+      for(int i = 0; i < this.colors.size() && i < this.colorsToMatch.size(); i++){
+        if(!this.colors.get(i).equals(this.colorsToMatch.get(i))){
+          incorrect++;
+        }
+      }
+      if(incorrect > this.undoLeft){
+        return 2;
+      }else{
+        return 0;
+      }
+    }    
   }
 }
 
@@ -151,6 +194,10 @@ class BlockManager{
       }
     }
   }
+  
+  public void init(){
+    this.blocks.clear();
+  }
 
   public color detectCollision(int x, int y, int playerSize){
     for(int i = 0; i < this.blocks.size(); i++){
@@ -169,5 +216,36 @@ class BlockManager{
     for(int i = 0; i < this.blocks.size(); i++){
       this.blocks.get(i).render();
     }
+  }
+};
+
+class Button{
+  int x, y, h, w;
+  String text;
+  color bgColor, textColor;
+  public Button(String text, int x, int y, int w, int h, color bgColor, color textColor){
+    this.text = text;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;    
+    this.bgColor = bgColor;
+    this.textColor = textColor;
+  }
+  
+  public void render(){
+    fill(this.bgColor);
+    rect(x, y, w, h);
+    fill(this.textColor);
+    textSize(14);
+    text(this.text, x + 30, y + 34);
+  }
+}
+
+class Menu{
+  Button btns[] = new Button[2];
+  public Menu(String gameName, int screenWidth, int screenHeigh){
+    this.btns[0] = new Button("SINGLE PLAYER", 600, screenHeight - 160, 170, 60, GREEN, color(255));
+    this.btns[1] = new Button("TWO PLAYER", 800, screenHeight - 160, 160, 60, BLUE, color(255));    
   }
 }
