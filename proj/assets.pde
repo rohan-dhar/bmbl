@@ -38,7 +38,7 @@ class Floor{
     this.bg.x = 0;
   }
     
-  public void next(int speed){
+  public void next(float speed){
     if(Math.abs(this.bg.x) >= this.bg.w){
       this.bg.x = 0;
     }else{
@@ -59,29 +59,30 @@ class Floor{
 }  
 
 class Player{
-  int x, y, size, maxX, screenWidth, screenHeight, undoLeft;
+  int x, y, size, maxX, screenWidth, screenHeight, undoLeft, colorsNum;
   
   ArrayList <Integer> colors = new ArrayList();
   ArrayList <Integer> colorsToMatch = new ArrayList();
   
-  public Player(int size, int maxX, int screenWidth, int screenHeight){
+  public Player(int size, int maxX, int screenWidth, int screenHeight, int colorsNum){
     this.size = size;
     this.maxX = maxX;
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
+    this.colorsNum = colorsNum;
   }
   
-  public void init(color bgColor, color colorsToMatch[], int colorsNum){    
+  public void init(){    
     this.x = this.screenWidth/2;
     this.y = 0;
     this.undoLeft = 5;
     this.colors.clear();
-    this.colorsToMatch.clear();
-    this.colors.add(bgColor);
-    for(int i = 0; i < colorsNum; i++){
-      this.colorsToMatch.add(colorsToMatch[i]);
+    this.colorsToMatch.clear();    
+    for(int i = 0; i < this.colorsNum; i++){
+      this.colorsToMatch.add( COLORS[(int)random(COLORS.length)] );
     }
-  }
+    this.colors.add(this.colorsToMatch.get(0));
+}
 
   
   public void move(int x, int y){
@@ -148,6 +149,10 @@ class Player{
       }
     }    
   }
+  
+  public void reset(){
+  
+  }
 }
 
 class Block{
@@ -183,7 +188,7 @@ class BlockManager{
     this.blocks.add(b);
   }
     
-  public void next(int speed){
+  public void next(float speed){
     for(int i = 0; i < this.blocks.size(); i++){
       Block b = this.blocks.get(i);
       if(b.x < -b.size/2){
@@ -219,33 +224,124 @@ class BlockManager{
   }
 };
 
-class Button{
-  int x, y, h, w;
-  String text;
-  color bgColor, textColor;
-  public Button(String text, int x, int y, int w, int h, color bgColor, color textColor){
-    this.text = text;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;    
-    this.bgColor = bgColor;
-    this.textColor = textColor;
+
+
+class Game{
+  String name, menuOptions[];
+  int screenWidth, screenHeight, state, playerColorsNum;
+  float speed, blocksProbability;
+  
+  Player player1;
+  Floor floor;
+  BlockManager blocks;
+  
+  public Game(String name, String[] options, int screenWidth, int screenHeight, Player player1, BlockManager blocks, Floor floor, int playerColorsNum, float speed, float blocksProbability){
+    this.state = 0;
+    this.name = name;
+    this.menuOptions = options;
+    this.screenWidth = screenWidth;
+    this.screenHeight = screenHeight;
+    this.player1 = player1;
+    this.blocks = blocks;
+    this.floor = floor;    
+    this.playerColorsNum = playerColorsNum;
+    this.speed = speed;
+    this.blocksProbability = blocksProbability;
   }
   
-  public void render(){
-    fill(this.bgColor);
-    rect(x, y, w, h);
-    fill(this.textColor);
-    textSize(14);
-    text(this.text, x + 30, y + 34);
+  public void renderMenu(){     
+     textFont(avenirBold);
+     textAlign(LEFT);
+     fill(255);
+     textSize(130);
+     text(this.name, this.screenWidth * 0.1, 250);
+     fill(230);
+     textSize(40);
+     text("Press the number to choose an option:", this.screenWidth*0.1, 320);
+     fill(210);
+     textAlign(LEFT);
+     textSize(26);
+     for(int i = 0; i < this.menuOptions.length; i++){
+       text(Integer.toString(i+1)+": "+this.menuOptions[i], screenWidth*0.1, 390 + i*45);
+    }
   }
+  
+  public void renderPage(){
+    if(this.state == 3 || this.state == 4){
+      textAlign(CENTER, CENTER);
+      fill(0,0,0,90);
+      rect(0,0, this.screenWidth, this.screenHeight);
+      fill(255,255,255);
+    }
+    if(this.state == 3){  
+      textSize(90);
+      text("YOU WON", screenWidth/2, screenHeight*0.42);
+      fill(255,255,255,150);
+      textSize(36);
+      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.6);    
+    }else if(this.state == 4){
+      textSize(90);
+      text("GAME OVER :(", this.screenWidth/2, this.screenHeight*0.42);
+      fill(255,255,255,150);
+      textSize(36);
+      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.6);
+    }
 }
+  
+  public void setState(int state){        
+    this.state = state;
+    if(state == 0){
+      this.renderMenu();
+    }else if(state == 1){      
+      this.floor.init();
+      this.blocks.init();
+      this.player1.init();
+    }else if(state == 3 || state == 4){
+      this.renderPage();
+    }    
+  
+  }
+  
+  public void next(){
+    this.floor.next(speed);  
+    if(random(1) <= this.blocksProbability){
+      color c = COLORS[(int)random(COLORS.length)];
+      
+      int y = (int)random(this.blocks.blockSize/2, this.screenHeight - this.blocks.blockSize/2);
+      this.blocks.add(c, y);
+    }
+    
+    this.blocks.next(speed*2);
+    this.blocks.render();
+    this.player1.move(mouseX, mouseY);
+    this.player1.render();  
 
-class Menu{
-  Button btns[] = new Button[2];
-  public Menu(String gameName, int screenWidth, int screenHeigh){
-    this.btns[0] = new Button("SINGLE PLAYER", 600, screenHeight - 160, 170, 60, GREEN, color(255));
-    this.btns[1] = new Button("TWO PLAYER", 800, screenHeight - 160, 160, 60, BLUE, color(255));    
+    color col = this.blocks.detectCollision(player1.x, player1.y, player1.size);
+    
+    if(col != color(0, 0, 0)){
+      this.player1.colors.add(col);
+      int playerState = player1.hasWon(); 
+      if(playerState == 1){
+        this.setState(3);
+      }else if(playerState == 2){
+        this.setState(4);        
+      }
+    }
+  }
+  
+  void handleKeyPress(){
+    if(this.state == 0){
+      if(key == '1'){
+        this.setState(1);
+      }
+    }else if(this.state == 1){
+      if(key == ' '){
+        this.player1.undo();
+      }
+    }else if(this.state == 3 || this.state == 4){
+      if(key == 'm' || key == 'M'){
+        this.setState(0);
+      }    
+    }
   }
 }
