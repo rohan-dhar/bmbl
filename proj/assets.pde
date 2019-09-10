@@ -136,13 +136,17 @@ class Player{
     if(this.colors.equals(this.colorsToMatch)){
       return 1;
     }else{
-      int incorrect = 0;
+      int incorrect = 0, firstIncorrect = -1;
+      
       for(int i = 0; i < this.colors.size() && i < this.colorsToMatch.size(); i++){
         if(!this.colors.get(i).equals(this.colorsToMatch.get(i))){
+          if(firstIncorrect == -1){
+            firstIncorrect = i;
+          }
           incorrect++;
         }
       }
-      if(incorrect > this.undoLeft){
+      if(incorrect > this.undoLeft || (this.colors.size() - firstIncorrect) > this.undoLeft){
         return 2;
       }else{
         return 0;
@@ -252,15 +256,15 @@ class Game{
   public void renderMenu(){     
      textFont(avenirBold);
      textAlign(LEFT);
-     fill(255);
+     fill(255, 255, 255, 255);
      textSize(130);
      text(this.name, this.screenWidth * 0.1, 250);
-     fill(230);
+     fill(255,255,255,140);
      textSize(40);
-     text("Press the number to choose an option:", this.screenWidth*0.1, 320);
-     fill(210);
+     text("Press the number to choose an option", this.screenWidth*0.1, 320);
+     fill(255,255,255,160);
      textAlign(LEFT);
-     textSize(26);
+     textSize(31);
      for(int i = 0; i < this.menuOptions.length; i++){
        text(Integer.toString(i+1)+": "+this.menuOptions[i], screenWidth*0.1, 390 + i*45);
     }
@@ -269,22 +273,20 @@ class Game{
   public void renderPage(){
     if(this.state == 3 || this.state == 4){
       textAlign(CENTER, CENTER);
-      fill(0,0,0,90);
-      rect(0,0, this.screenWidth, this.screenHeight);
       fill(255,255,255);
     }
     if(this.state == 3){  
       textSize(90);
-      text("YOU WON", screenWidth/2, screenHeight*0.42);
+      text("YOU WON", this.screenWidth/2, this.screenHeight*0.45);
       fill(255,255,255,150);
       textSize(36);
-      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.6);    
+      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.58);    
     }else if(this.state == 4){
       textSize(90);
-      text("GAME OVER :(", this.screenWidth/2, this.screenHeight*0.42);
+      text("GAME OVER :(", this.screenWidth/2, this.screenHeight*0.45);
       fill(255,255,255,150);
       textSize(36);
-      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.6);
+      text("Press M to see the Main Menu", this.screenWidth/2, this.screenHeight*0.58);
     }
 }
   

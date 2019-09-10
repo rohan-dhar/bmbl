@@ -41,7 +41,7 @@ void setup(){
   smooth();
   noStroke();
   
-  floor = new Floor("bg1.jpg", screenWidth, screenHeight);
+  floor = new Floor("bg9.png", screenWidth, screenHeight);
   avenirBold = createFont("AvenirNext-Bold", 18);
   avenir = createFont("Avenir Next", 18);  
   
@@ -56,7 +56,7 @@ void draw(){
     game.renderMenu();
   }else if(game.state == 1){
     game.next();
-  }else if(game.state == 3 | game.state == 40){
+  }else if(game.state == 3 | game.state == 4){
     game.renderPage();
   }
 }
