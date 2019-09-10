@@ -146,7 +146,7 @@ class Player{
           incorrect++;
         }
       }
-      if(incorrect > this.undoLeft || (this.colors.size() - firstIncorrect) > this.undoLeft){
+      if(incorrect > this.undoLeft || ((this.colors.size() - firstIncorrect) > this.undoLeft && firstIncorrect != -1)){
         return 2;
       }else{
         return 0;
