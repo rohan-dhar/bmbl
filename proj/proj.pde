@@ -1,3 +1,5 @@
+import processing.serial.*;
+
 // Core Constants and settings
 final int screenWidth = 1200, 
           screenHeight = 800,
@@ -33,6 +35,8 @@ Floor floor;
 Player player1 = new Player(playerSize, playerMaxX, screenWidth, screenHeight, playerColorsNum);
 BlockManager blocks = new BlockManager(blockSize, screenWidth);
 
+Arduino a1, a2;
+
 Game game;
 
 void setup(){
@@ -40,12 +44,15 @@ void setup(){
   size(1200, 800);
   smooth();
   noStroke();
-  
+
   floor = new Floor("bg9.png", screenWidth, screenHeight);
   avenirBold = createFont("AvenirNext-Bold", 18);
-  avenir = createFont("Avenir Next", 18);  
+  avenir = createFont("Avenir Next", 18);
   
-  game =  new Game(gameName, menuOptions, screenWidth, screenHeight, player1, blocks, floor, playerColorsNum, speed, blockProbability);  
+  //a1 = new Arduino(this, 1, 20, 20);
+  a2 = new Arduino(this, 2, 35, 35);
+  
+  game =  new Game(gameName, menuOptions, screenWidth, screenHeight, player1, blocks, floor, playerColorsNum, speed, blockProbability, a1, a2);  
   game.setState(0);
 }
 

@@ -16,6 +16,77 @@ class Element{
   }
 };
 
+class Arduino{
+  int type, moveByX, moveByY, lastMove;;
+  Serial port;
+  
+  public Arduino(PApplet app, int type, int moveByX, int moveByY){
+    int cTries = 1, cLimit = 10;
+    
+    this.type = type;
+    this.moveByX = moveByX;
+    this.moveByY = moveByY;
+    this.lastMove = -1;   
+    println("PORT: ");
+    println(Serial.list()[Serial.list().length -1]);
+    while(cTries <= cLimit){
+      try{
+        this.port = new Serial(app, Serial.list()[Serial.list().length -1], 9600);
+      }
+      catch(Exception e){
+        cTries++;
+        continue;
+      }
+      break;
+    }
+    if(cTries > cLimit){
+      println("Can't open Serial. Quitting.");
+      exit();
+    }else{
+      print("Connected in " + Integer.toString(cTries) + " tries");
+    }
+  }
+  
+  private int[] getDirToMove(int v){
+      if(v == 0){
+        return new int[] {0, -this.moveByY};
+      }else if(v == 1){
+        return new int[] {0, this.moveByY};
+      }else if(v == 2){
+        return new int[] {-this.moveByX, 0};
+      }else if(v == 3){
+        return new int[] {this.moveByX, 0};
+      }else if(v == 4){
+        return new int[] {-1, -1};
+      }
+      return new int[] {0, 0};
+  }
+
+  public int[] getMove(){
+    if(this.port.available() == 0){
+      return new int[] {0, 0};
+    }
+    if(this.type == 2){
+      String data = this.port.readStringUntil('\n');
+      if(data == null){
+        return new int[] {0, 0};
+      }
+      data = data.substring(0, data.length() - 2);
+      int v = Integer.parseInt(data);
+      
+      if(v == 5 && this.lastMove != -1){
+        int r[] = this.getDirToMove(this.lastMove);
+        return r; 
+      }else{
+        this.lastMove = v;
+        int r[] = this.getDirToMove(v); 
+        return r;
+      }
+    }
+    return new int[] {0, 0};
+  }
+
+}
 
 // Floor: Set of multiple tile Elements
 class Floor{
@@ -94,6 +165,10 @@ class Player{
       this.x = this.screenWidth/2 + maxX;
     }
     this.y = y;
+  }
+  
+  public void moveBy(int x, int y){
+    this.move(this.x + x, this.y + y);
   }
   
   public boolean undo(){
@@ -234,12 +309,13 @@ class Game{
   String name, menuOptions[];
   int screenWidth, screenHeight, state, playerColorsNum;
   float speed, blocksProbability;
+  Arduino a1, a2;
   
   Player player1;
   Floor floor;
   BlockManager blocks;
   
-  public Game(String name, String[] options, int screenWidth, int screenHeight, Player player1, BlockManager blocks, Floor floor, int playerColorsNum, float speed, float blocksProbability){
+  public Game(String name, String[] options, int screenWidth, int screenHeight, Player player1, BlockManager blocks, Floor floor, int playerColorsNum, float speed, float blocksProbability, Arduino a1, Arduino a2){
     this.state = 0;
     this.name = name;
     this.menuOptions = options;
@@ -251,6 +327,8 @@ class Game{
     this.playerColorsNum = playerColorsNum;
     this.speed = speed;
     this.blocksProbability = blocksProbability;
+    this.a1 = a1;
+    this.a2 = a2;
   }
   
   public void renderMenu(){     
@@ -302,20 +380,24 @@ class Game{
       this.renderPage();
     }    
   
-  }
+  }  
   
   public void next(){
     this.floor.next(speed);  
     if(random(1) <= this.blocksProbability){
       color c = COLORS[(int)random(COLORS.length)];
-      
       int y = (int)random(this.blocks.blockSize/2, this.screenHeight - this.blocks.blockSize/2);
       this.blocks.add(c, y);
     }
     
     this.blocks.next(speed*2);
     this.blocks.render();
-    this.player1.move(mouseX, mouseY);
+    int move[] = this.a2.getMove();
+    if(move[0] == -1 && move[1] == -1){  
+      player1.undo();
+    }else{
+      this.player1.moveBy(move[0], move[1]);
+    }    
     this.player1.render();  
 
     color col = this.blocks.detectCollision(player1.x, player1.y, player1.size);
