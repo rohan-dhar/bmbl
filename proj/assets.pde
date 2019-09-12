@@ -17,7 +17,8 @@ class Element{
 };
 
 class Arduino{
-  int type, moveByX, moveByY, lastMove;;
+  int type, moveByX, moveByY, lastMove;
+  boolean ledStatus;
   Serial port;
   
   public Arduino(PApplet app, int type, int moveByX, int moveByY){
@@ -26,7 +27,9 @@ class Arduino{
     this.type = type;
     this.moveByX = moveByX;
     this.moveByY = moveByY;
-    this.lastMove = -1;   
+    this.lastMove = -1;
+    this.ledStatus = false;
+    
     println("PORT: ");
     println(Serial.list()[Serial.list().length -1]);
     while(cTries <= cLimit){
@@ -84,6 +87,20 @@ class Arduino{
       }
     }
     return new int[] {0, 0};
+  }
+  
+  public void ledOn(){
+    this.ledStatus = true;
+    this.port.write("LON\n");
+  }
+
+  public void ledOff(){
+    this.ledStatus = false;
+    this.port.write("LOF\n");
+  }
+
+  public void buzz(int msec){    
+    this.port.write("BUZ"+Integer.toString(msec)+"\n");
   }
 
 }
@@ -376,8 +393,12 @@ class Game{
       this.floor.init();
       this.blocks.init();
       this.player1.init();
+      this.a2.buzz(1000);
+      this.a2.ledOn();
     }else if(state == 3 || state == 4){
       this.renderPage();
+      this.a2.buzz(1000);
+      this.a2.ledOff();
     }    
   
   }  
@@ -404,6 +425,7 @@ class Game{
     
     if(col != color(0, 0, 0)){
       this.player1.colors.add(col);
+      this.a2.buzz(100);
       int playerState = player1.hasWon(); 
       if(playerState == 1){
         this.setState(3);
