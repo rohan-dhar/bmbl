@@ -24,9 +24,6 @@ void processInstruction(String ins){
     buzzing = true;
     buzzFor = ins.substring(3).toInt();
     buzzStart = millis();
-    Serial.println(buzzing);
-    Serial.println(buzzStart);  
-    Serial.println(buzzFor);  
   }else if(code == "DBG"){
     Serial.println(buzzing);
     Serial.println(buzzStart);  
@@ -80,7 +77,7 @@ void loop() {
   } 
   if (ir.decode(&irRes)) {
     Serial.println(getDir(irRes.value));
-//    delay(100);
+    delay(100);
     ir.resume();     
   }
 }

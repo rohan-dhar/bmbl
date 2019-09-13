@@ -18,10 +18,9 @@ final color RED = color(255, 138, 133),
             ORANGE = color(255,160,70);
 
 final String menuOptions[] = {
-  "Single player with Gyroscope",
-  "Single player with Remote",
-  "Two player with Two Gyroscopes",
-  "Two player with Gyroscope and Remote"
+  "Single player with Controller",
+  "Single player with Motion",
+  "Two player with Motion and Controller"
 };
 
 final color COLORS[] = {RED,GREEN, BLUE, YELLOW, PURPLE, CYAN, ORANGE};
@@ -32,7 +31,9 @@ PFont avenirBold, avenir;
 
 // Basic Data 
 Floor floor;
-Player player1 = new Player(playerSize, playerMaxX, screenWidth, screenHeight, playerColorsNum);
+Player player1 = new Player(playerSize, playerMaxX, screenWidth, screenHeight, playerColorsNum, 1);
+Player player2 = new Player(playerSize, playerMaxX, screenWidth, screenHeight, playerColorsNum, 2);
+
 BlockManager blocks = new BlockManager(blockSize, screenWidth);
 
 Arduino a1, a2;
@@ -50,9 +51,9 @@ void setup(){
   avenir = createFont("Avenir Next", 18);
   
   //a1 = new Arduino(this, 1, 20, 20);
-  a2 = new Arduino(this, 2, 35, 35);
+  a2 = new Arduino(this, 2, 40, 40);
   
-  game =  new Game(gameName, menuOptions, screenWidth, screenHeight, player1, blocks, floor, playerColorsNum, speed, blockProbability, a1, a2);  
+  game =  new Game(gameName, menuOptions, screenWidth, screenHeight, player1, player2, blocks, floor, playerColorsNum, speed, blockProbability, a1, a2);  
   game.setState(0);
 }
 
@@ -61,9 +62,9 @@ void draw(){
   game.floor.next(speed);
   if(game.state == 0){
     game.renderMenu();
-  }else if(game.state == 1){
+  }else if(game.state == 1 || game.state == 2 || game.state == 5){
     game.next();
-  }else if(game.state == 3 | game.state == 4){
+  }else if(game.state == 3 | game.state == 4 || game.state == 6 | game.state == 7){
     game.renderPage();
   }
 }
