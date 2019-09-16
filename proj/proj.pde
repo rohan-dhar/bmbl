@@ -23,7 +23,7 @@ final int screenWidth = 1200,
   colorsNum = 7, 
   playerSize = 180, 
   playerMaxX = 220, 
-  playerColorsNum = 5;
+  playerColorsNum = 9;
 
 final color RED = color(255, 138, 133), 
   GREEN = color(46, 204, 170), 
@@ -41,7 +41,7 @@ final String menuOptions[] = {
 
 final color COLORS[] = {RED, GREEN, BLUE, YELLOW, PURPLE, CYAN, ORANGE};
 final String gameName = "Bmbl";
-float blockProbability = 0.035, speed = 5;
+float blockProbability = 0.04, speed = 5;
 
 PFont avenirBold, avenir;
 
