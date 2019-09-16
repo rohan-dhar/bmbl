@@ -16,6 +16,19 @@ class Element {
   }
 };
 
+class Audio{
+  SoundFile file;
+  public Audio(PApplet app, String fileName){
+    this.file = new SoundFile(app, fileName);
+  }
+  public void loop(){
+    this.file.loop(1.0, 0.6);
+  }
+  public void play(){
+    this.file.play();
+  }
+}
+
 class Arduino {
   int type, moveByX, moveByY, lastMove;
   boolean ledStatus;
@@ -30,11 +43,22 @@ class Arduino {
     this.lastMove = -1;
     this.ledStatus = false;
 
-    println("PORT: ");
-    println(Serial.list()[Serial.list().length -1]);
+    println("CONNECTING TO PORT: ");
+    if(this.type == 1){
+      println(Serial.list()[1]);
+    }else{
+      println(Serial.list()[Serial.list().length - 1]);
+    }
+    
+    
     while (cTries <= cLimit) {
       try {
-        this.port = new Serial(app, Serial.list()[Serial.list().length -1], 9600);
+        if(this.type == 1){
+          this.port = new Serial(app, Serial.list()[1], 115200);
+        }else{
+          this.port = new Serial(app, Serial.list()[Serial.list().length - 1], 2000000);
+        }
+
       }
       catch(Exception e) {
         cTries++;
@@ -48,6 +72,7 @@ class Arduino {
     } else {
       print("Connected in " + Integer.toString(cTries) + " tries");
     }
+    this.port.clear();
   }
 
   private int[] getDirToMove(int v) {
@@ -85,8 +110,33 @@ class Arduino {
         int r[] = this.getDirToMove(v); 
         return r;
       }
-    }
-    return new int[] {0, 0};
+    }else{
+      String data = this.port.readStringUntil('\n');
+      if (data == null || data == "") {
+        return new int[] {0, 0};
+      }
+      data = data.substring(0, data.length() - 2);
+      String spl[] = data.split(":");
+      int x = 0, y = 0, undo = 0;
+      try{
+        x = Integer.parseInt(spl[0]);
+        y = Integer.parseInt(spl[1]);
+        undo = Integer.parseInt(spl[2]);
+      }
+      catch(Exception e){
+        print("\nCorrupt Arduino Response: \n");
+        print("\nString Data: \n");
+        println(data);
+        print("\nArray Data: \n");
+        printArray(spl);
+        return new int[] {0, 0};
+      }
+      if(undo == 1){
+        return new int[] {-1, -1};
+      }else{
+        return new int[] {x, y};
+      }
+    }    
   }
 
   public void ledOn() {
@@ -203,7 +253,7 @@ class Player {
   public boolean undo() {
     if (this.undoLeft > 0) {
       if (this.colors.size() == 1) {
-        return true;
+        return false;
       }
       this.colors.remove(this.colors.size()-1);
       this.undoLeft--;
@@ -237,7 +287,7 @@ class Player {
     noStroke();
     fill(255, 255, 255, 150);
     textSize(20);
-
+    
     if (this.number == 1) {
       text("UNDO LEFT", 50, 70);
     } else { 
@@ -351,13 +401,15 @@ class Game {
   String name, menuOptions[];
   int screenWidth, screenHeight, state, playerColorsNum;
   float speed, blocksProbability;
+  Element splashScreen;
   Arduino a1, a2;
+  Audio blockAudio, undoAudio, undoFailAudio;
 
   Player player1, player2;
   Floor floor;
   BlockManager blocks;
 
-  public Game(String name, String[] options, int screenWidth, int screenHeight, Player player1, Player player2, BlockManager blocks, Floor floor, int playerColorsNum, float speed, float blocksProbability, Arduino a1, Arduino a2) {
+  public Game(String name, String[] options, int screenWidth, int screenHeight, Player player1, Player player2, BlockManager blocks, Floor floor, int playerColorsNum, float speed, float blocksProbability, Arduino a1, Arduino a2, Element splashScreen, Audio blockAudio, Audio undoAudio, Audio undoFailAudio) {
     this.state = 0;
     this.name = name;
     this.menuOptions = options;
@@ -372,29 +424,17 @@ class Game {
     this.blocksProbability = blocksProbability;
     this.a1 = a1;
     this.a2 = a2;
+    this.splashScreen = splashScreen;
+    this.blockAudio = blockAudio;
+    this.undoAudio = undoAudio;
+    this.undoFailAudio = undoFailAudio;
   }
-
-  public void renderMenu() {     
-    textFont(avenirBold);
-    textAlign(LEFT);
-    fill(255, 255, 255, 255);
-    textSize(130);
-    text(this.name, this.screenWidth * 0.1, 250);
-    fill(255, 255, 255, 140);
-    textSize(40);
-    text("Press the number to choose an option", this.screenWidth*0.1, 320);
-    fill(255, 255, 255, 160);
-    textAlign(LEFT);
-    textSize(31);
-    for (int i = 0; i < this.menuOptions.length; i++) {
-      text(Integer.toString(i+1)+": "+this.menuOptions[i], screenWidth*0.1, 390 + i*45);
-    }
-  }
-
   public void renderPage() {
     textAlign(CENTER, CENTER);
     fill(255, 255, 255);
-    if (this.state == 3) {  
+    if(this.state == 0){      
+      this.splashScreen.render();
+    }else if (this.state == 3) {  
       textSize(90);
       text("YOU WON", this.screenWidth/2, this.screenHeight*0.45);
       fill(255, 255, 255, 150);
@@ -424,9 +464,8 @@ class Game {
   public void setState(int state) {        
     int prevState = this.state;
     this.state = state;
-    if (state == 0) {
-      this.renderMenu();
-    }else if (state == 1 || state == 2) {      
+    if (state == 1 || state == 2) {      
+      textAlign(LEFT);
       if(state == 1){
         this.a2.buzz(1000);
         this.a2.ledOn();
@@ -434,14 +473,15 @@ class Game {
       this.floor.init();
       this.blocks.init();
       this.player1.init();
-    }else if (state == 5) {      
+    }else if (state == 5) {
+      textAlign(LEFT);
       this.floor.init();
       this.blocks.init();
       this.player1.init();
       this.player2.init();
       this.a2.buzz(1000);
       this.a2.ledOn();
-    }else if (state == 3 || state == 4 || state == 6 || state == 7) {
+    }else if (state == 3 || state == 4 || state == 6 || state == 7 || state == 0) {
       this.renderPage();
       if(prevState == 1 || prevState == 5){
         this.a2.buzz(1000);
@@ -469,9 +509,16 @@ class Game {
       }
 
       if (move[0] == -1 && move[1] == -1 && this.state == 1) {  
-        player1.undo();
+        if(!player1.undo()){
+          this.a2.buzz(230);
+          fill(color(255,255,255, 70));
+          rect(0, 0, this.screenWidth, this.screenHeight);
+          this.undoFailAudio.play();
+        }else{
+          this.undoAudio.play();
+        }
       } else {
-        this.player1.moveBy(move[0], move[1]);
+        this.player1.moveBy(move[0], move[1]);        
       }    
 
       this.player1.render();  
@@ -480,8 +527,9 @@ class Game {
       if (col != color(0, 0, 0)) {
         this.player1.colors.add(col);
         if(this.state == 1){
-          this.a2.buzz(100);
+          this.a2.buzz(180);
         }
+        this.blockAudio.play();
         int playerState = player1.hasWon(); 
         if (playerState == 1) {
           this.setState(3);
@@ -495,14 +543,20 @@ class Game {
         move1 = this.a2.getMove();
         move2 = new int[] {mouseX - this.player2.x, mouseY - this.player2.y};
 
-      if (move1[0] == -1 && move1[1] == -1) {  
-        player1.undo();
+      if (move1[0] == -1 && move1[1] == -1) {
+        if(!player1.undo()){
+          this.a2.buzz(230);
+          fill(color(255,255,255, 70));
+          rect(0, 0, this.screenWidth, this.screenHeight);
+          this.undoFailAudio.play();
+        }else{
+          this.undoAudio.play();
+        }
       } else {
         this.player1.moveBy(move1[0], move1[1]);
       }    
       
-      this.player2.moveBy(move2[0], move2[1]);
-
+      this.player2.moveBy(move2[0], move2[1]);      
       this.player1.render();  
       this.player2.render();
       
@@ -511,6 +565,7 @@ class Game {
 
       if (col2 != color(0, 0, 0)) {
         this.player2.colors.add(col2);
+        this.blockAudio.play();
         int playerState = player2.hasWon(); 
         if (playerState == 1) {
           this.setState(6);
@@ -521,6 +576,7 @@ class Game {
       
       if (col1 != color(0, 0, 0)) {
         this.player1.colors.add(col1);
+        this.blockAudio.play();
         this.a2.buzz(100);
         int playerState = player1.hasWon(); 
         if (playerState == 1) {
@@ -529,8 +585,7 @@ class Game {
           this.setState(6);
         }
       } 
-
-  }
+    }
   }
 
   void handleKeyPress() {

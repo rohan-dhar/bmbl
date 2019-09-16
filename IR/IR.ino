@@ -2,11 +2,10 @@
 
 const int irPin = 7,
           ledPin = 8,
-          vibPin = 9;
+          vibPin = 3,
+          toneHz = 1970;
 
-bool buzzing = false;
-int buzzFor = -1;
-unsigned long int buzzStart = 0;
+
 
 // UP, DOWN, LEFT, RIGHT, UNDO
 unsigned long int dir[5] = {0xFF18E7, 0xFF4AB5, 0xFF10EF, 0xFF5AA5, 0xFF38C7};
@@ -21,28 +20,11 @@ void processInstruction(String ins){
   }else if(code == "LOF"){
     digitalWrite(ledPin, LOW);
   }else if(code == "BUZ"){
-    buzzing = true;
-    buzzFor = ins.substring(3).toInt();
-    buzzStart = millis();
-  }else if(code == "DBG"){
-    Serial.println(buzzing);
-    Serial.println(buzzStart);  
-    Serial.println(buzzFor);  
+//    buzzing = true;
+//    buzzFor = ins.substring(3).toInt();
+//    buzzStart = millis();
+      tone(vibPin, toneHz, ins.substring(3).toInt());
   }
-}
-
-void buzzCheck(){
-  if(!buzzing){
-    return;
-  }
-  if(millis() - buzzStart <= buzzFor){
-    digitalWrite(vibPin, HIGH);
-  }else{
-    digitalWrite(vibPin, LOW);
-    buzzing = false;
-    buzzFor = -1;
-    buzzStart = -1;
-  }    
 }
 
 int getDir(long int c){
@@ -65,11 +47,10 @@ void setup() {
 
   ir.enableIRIn();
 
-  Serial.begin(9600);
+  Serial.begin(2000000);
 }
 
 void loop() {
-  buzzCheck();
   if(Serial.available()){
     String ins;
     ins = Serial.readStringUntil('\n');    
@@ -77,7 +58,7 @@ void loop() {
   } 
   if (ir.decode(&irRes)) {
     Serial.println(getDir(irRes.value));
-    delay(100);
+    delay(50);
     ir.resume();     
   }
 }
